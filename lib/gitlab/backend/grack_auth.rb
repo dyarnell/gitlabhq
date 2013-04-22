@@ -9,8 +9,15 @@ module Grack
       @request = Rack::Request.new(env)
       @auth = Request.new(env)
 
+      unless Gitlab.config.gitlab.relative_url_root.empty?
+        #if website is mounted using relative_url_root need to remove it first
+        @env['PATH_INFO'] = @request.path.sub(Gitlab.config.gitlab.relative_url_root,'')
+      else
+        @env['PATH_INFO'] = @request.path
+      end
+
       # Need this patch due to the rails mount
-      @env['PATH_INFO'] = @request.path
+#      @env['PATH_INFO'] = @request.path
       @env['SCRIPT_NAME'] = ""
 
       return render_not_found unless project
@@ -32,7 +39,25 @@ module Grack
         # Authentication with username and password
         login, password = @auth.credentials
         self.user = User.find_by_email(login) || User.find_by_username(login)
-        return false unless user.try(:valid_password?, password)
+	self.user = nil unless user.try(:valid_password?, password)
+        # Check user against LDAP backend if user is not authenticated
+        # Only check with valid login and password to prevent anonymous bind results
+        gl = Gitlab.config
+        if user.nil? && gl.ldap.enabled && !login.blank? && !password.blank?
+          require "omniauth-ldap"
+          ldap = OmniAuth::LDAP::Adaptor.new(gl.ldap)
+          ldap_user = ldap.bind_as(
+            filter: Net::LDAP::Filter.eq(ldap.uid, login),
+            size: 1,
+            password: password
+          )
+
+          if ldap_user
+            self.user = User.find_by_extern_uid_and_provider(ldap_user.dn, 'ldap')
+          end
+        end
+
+        return false unless self.user
 
         Gitlab::ShellEnv.set_env(user)
       end
