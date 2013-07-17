@@ -1,7 +1,7 @@
 @Api =
-  users_path: "/api/:version/users.json"
-  user_path: "/api/:version/users/:id.json"
-  notes_path: "/api/:version/projects/:id/notes.json"
+  users_path: "/gitlab/api/:version/users.json"
+  user_path: "/gitlab/api/:version/users/:id.json"
+  notes_path: "/gitlab/api/:version/projects/:id/notes.json"
 
   # Get 20 (depends on api) recent notes 
   # and sort the ascending from oldest to newest

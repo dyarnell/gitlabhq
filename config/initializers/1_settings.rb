@@ -66,6 +66,7 @@ rescue ArgumentError # no user configured
   '/home/' + Settings.gitlab['user']
 end
 Settings.gitlab['signup_enabled'] ||= false
+Settings.gitlab['case_sensitive'] ||= false
 Settings.gitlab['username_changing_enabled'] = true if Settings.gitlab['username_changing_enabled'].nil?
 Settings.gitlab['default_projects_features'] ||= {}
 Settings.gitlab.default_projects_features['issues']         = true if Settings.gitlab.default_projects_features['issues'].nil?
